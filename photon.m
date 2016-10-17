@@ -60,6 +60,17 @@ classdef photon
                 obj.uz = sign(muz) * cosine;
             end
         end
+        function obj = check_boundary(obj, z_bound)
+            % modify s if photon will hit boundary in the next move
+            if obj.uz < 0
+                db = (z_bound(1)-obj.z) / obj.uz;
+            elseif obj.uz == 0
+                db = inf;
+            else
+                db = (z_bound(2)-obj.z) / obj.uz;
+            end
+            error('NotImplemented')
+        end
     end
 end
 
