@@ -9,7 +9,7 @@ classdef photon
         layer
     end
     methods
-        function obj = initialize(obj, x, y)
+        function obj = initialize(obj, x, y, ly_ls)
             % initialize photon
             obj.x = x;
             obj.y = y;
@@ -17,27 +17,48 @@ classdef photon
             obj.ux = 0;
             obj.uy = 0;
             obj.uz = 1;
-            obj.w = 1;
             obj.dead = false;
             obj.s = 0;
             obj.scatters = 0;
             obj.layer = 2;
+            % in case that first layer is clear, do reflection
+            amb_ly = ly_ls(1);
+            this_ly = ly_ls(2);
+            bot_ly = ly_ls(3);
+            n1 = amb_ly.n;
+            n2 = this_ly.n;
+            n3 = bot_ly.n;
+            if this_ly.clear
+                r1 = ((n1 - n2)/(n1 + n2))^2;
+                r2 = ((n3 - n2)/(n3 + n2))^2;
+                r_sp = r1 + (1-r1)^2*r2/(1-r1*r2);
+                obj.w = 1 - r_sp;
+            else
+                if n1 ~= n2
+                    r_sp = ((n1 - n2)/(n1 + n2))^2;
+                    obj.w = 1 - r_sp;
+                else
+                    obj.w = 1;
+                end
+            end
         end
         function obj = get_s(obj)
             % get random s
             xi = time_rand();
             obj.s = -log(xi);
         end
-        function [obj, delta_w] = absorb(obj, mu_a_ls, mu_t_ls)
+        function [obj, delta_w] = absorb(obj, ly_ls)
             % deduce weight due to absorption
-            mu_ratio = mu_a_ls(obj.layer)/mu_t_ls(obj.layer);
+            this_ly = ly_ls(obj.layer);
+            mu_ratio = this_ly.mu_a/this_ly.mu_t;
             delta_w = obj.w * mu_ratio;
             obj.w = obj.w - delta_w;
         end
-        function obj = scatter(obj, g_ls)
+        function obj = scatter(obj, ly_ls)
             % update direction cosines upon scattering
             xi = time_rand();
-            g = g_ls(obj.layer);
+            this_ly = ly_ls(obj.layer);
+            g = this_ly.g;
             if g ~= 0
                 cosine = 1 + g^2 - ((1-g^2)/(1-g+2*g*xi))^2;
                 cosine = cosine / (2*g);
@@ -63,10 +84,11 @@ classdef photon
             end
             obj.scatters = obj.scatters + 1;
         end
-        function obj = move(obj, z_ls, mu_t_ls)
+        function obj = move(obj, ly_ls)
             % judge if the photon will hit boundary then move it 
-            mu_t = mu_t_ls(obj.layer);
-            z_bound = [z_ls(obj.layer-1), z_ls(obj.layer)];
+            this_ly = ly_ls(obj.layer);
+            mu_t = this_ly.mu_t;
+            z_bound = [this_ly.z0, this_ly.z1];
             if obj.uz < 0
                 db = (z_bound(1)-obj.z) / obj.uz;
             elseif obj.uz == 0
@@ -88,18 +110,20 @@ classdef photon
                 obj.s = 0;
             end
         end
-        function obj = reflect_transmit(obj, n_ls)
+        function obj = reflect_transmit(obj, ly_ls)
             % do reflection or transmission
             dir = 0;
+            this_ly = ly_ls(obj.layer)
             a_i = acos(abs(obj.uz));
-            n_i = n_ls(obj.layer);
+            n_i = this_ly.n;
             if obj.uz < 0
-                n_t = n_ls(obj.layer-1);
+                next_ly = ly_ls(obj.layer-1)
                 dir = -1;
             else
-                n_t = n_ls(obj.layer+1);
+                next_ly = ly_ls(obj.layer+1)
                 dir = 1;
             end
+            n_t = next_ly.n;
             a_t = asin(n_i*sin(a_i)/n_t);
             if n_i > n_t && a_i > asin(n_t/n_i)
                 r = 1;
@@ -118,7 +142,7 @@ classdef photon
                 else
                     obj.layer = obj.layer + 1;
                 end
-                if obj.layer == 1 || obj.layer == length(n_ls)
+                if obj.layer == 1 || obj.layer == length(ly_ls)
                     obj.dead = true;
                 else
                     obj.ux = obj.ux*n_i/n_t;
