@@ -112,15 +112,14 @@ classdef photon
         end
         function obj = reflect_transmit(obj, ly_ls)
             % do reflection or transmission
-            dir = 0;
-            this_ly = ly_ls(obj.layer)
+            this_ly = ly_ls(obj.layer);
             a_i = acos(abs(obj.uz));
             n_i = this_ly.n;
             if obj.uz < 0
-                next_ly = ly_ls(obj.layer-1)
+                next_ly = ly_ls(obj.layer-1);
                 dir = -1;
             else
-                next_ly = ly_ls(obj.layer+1)
+                next_ly = ly_ls(obj.layer+1);
                 dir = 1;
             end
             n_t = next_ly.n;

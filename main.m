@@ -20,19 +20,14 @@ w_thresh = 0.0001;
 m = 10;
 n_r = 500; % number of grid pixels along r
 n_z = 200; % number of grid pixels along z
-delta_z = (z_ls(end)-z_ls(1)) / n_z;
 delta_r = 0.005;
+delta_z = 0.005;
 
 %%
 % set recording grids
-a_rz = zeros([n_r, n_z]);
+out_grids = grids(n_r, delta_r, n_z, delta_z);
 
-
-x=[];
-y=[];
-z=[];
-w=[];
-
+%% 
 % start loop
 for i_photon = 1:n_photon
     
@@ -54,14 +49,9 @@ for i_photon = 1:n_photon
 
         % if no booundary hit, absorb and scatter
         if ph.s == 0
-            ph = ph.absorb(ly_ls);
-            ph = ph.scatter(g_ls);
-            %
-            x(i_photon, ph.scatters) = ph.x;
-            y(i_photon, ph.scatters) = ph.y;
-            z(i_photon, ph.scatters) = ph.z;
-            w(i_photon, ph.scatters) = ph.w;
-            %
+            [ph, dw] = ph.absorb(ly_ls);
+            out_grids = out_grids.update_a(ph, dw);
+            ph = ph.scatter(ly_ls);
         % if boundary hit, transmit or reflect
         else
             ph = ph.reflect_transmit(ly_ls);
@@ -73,7 +63,16 @@ for i_photon = 1:n_photon
                 ph = ph.terminate(m);
             end
         end
-        
     end
-        
 end
+    
+%%
+% post-processing
+phi_z = out_grids.get_phiz(ly_ls);
+z_coords = out_grids.get_zcoords();
+
+%%
+% plot
+semilogy(z_coords, phi_z);
+xlabel('z [cm]');
+ylabel('Fluence');
