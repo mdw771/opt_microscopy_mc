@@ -12,8 +12,8 @@
 % set parameters
 clear;
 ly1 = layer(-1, 0, 0, 0, 1, 1, true, true);
-ly2 = layer(0, 1, 0.1, 100, 0.9, 1, false, false);
-ly3 = layer(1, inf, 0, 0, 1, 1, true, true);
+ly2 = layer(0, inf, 0.1, 100, 0.9, 1, false, false);
+ly3 = layer(inf, inf, 0, 0, 1, 1, true, true);
 ly_ls = [ly1, ly2, ly3];
 n_photon = 1000;
 w_thresh = 0.0001;
@@ -29,6 +29,8 @@ out_grids = grids(n_r, delta_r, n_z, delta_z);
 
 %% 
 % start loop
+seed = cputime * 100;
+rng(seed);
 for i_photon = 1:n_photon
     
     waitbar(i_photon/n_photon)
@@ -68,7 +70,7 @@ end
     
 %%
 % post-processing
-phi_z = out_grids.get_phiz(ly_ls);
+phi_z = out_grids.get_phiz(ly_ls, n_photon);
 z_coords = out_grids.get_zcoords();
 
 %%

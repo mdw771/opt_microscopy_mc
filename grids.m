@@ -22,46 +22,48 @@ classdef grids
             z = ph.z;
             ir = floor(r/obj.delta_r) + 1;
             iz = floor(z/obj.delta_z) + 1;
-            if r >= obj.rr
+            if ir > obj.nr || ph.scatters == 0
                 ir = obj.nr;
             end
-            if z >= obj.zz
+            if iz > obj.nz
                 iz = obj.nz;
             end
-            if ph.scatters ~= 0
-                obj.a_rz(ir, iz) = obj.a_rz(ir, iz) + dw;
-            else
-                obj.a_1st(iz) = obj.a_1st(iz) + dw;
-            end
+            obj.a_rz(ir, iz) = obj.a_rz(ir, iz) + dw;
         end
-        function a_z = get_az(obj)
+        function a_z = get_az(obj, n_photon)
             a_z = sum(obj.a_rz, 1);
+            a_z = a_z / (obj.delta_z*n_photon);
         end
-        function phi_z = get_phiz(obj, ly_ls)
+        function phi_z = get_phiz(obj, ly_ls, n_photon)
             zt = obj.zz;
             layer = 2;
-            a_z = obj.get_az();
+            a_z = obj.get_az(n_photon);
             phi_z = zeros(obj.nz);
-            while zt > 0
-                this_ly = ly_ls(layer);
-                thickness = this_ly.z1 - this_ly.z0;
-                iz0 = floor(this_ly.z0/obj.delta_z) + 1;
-                if zt > thickness
-                    iz1 = floor(this_ly.z1/obj.delta_z) + 1;
-                else
-                    iz1 = int16(obj.nz);
+            if length(ly_ls) == 3
+                this_ly = ly_ls(2);
+                phi_z = a_z / this_ly.mu_a;
+            else
+                while zt > 0
+                    this_ly = ly_ls(layer);
+                    thickness = this_ly.z1 - this_ly.z0;
+                    iz0 = floor(this_ly.z0/obj.delta_z) + 1;
+                    if zt > thickness
+                        iz1 = floor(this_ly.z1/obj.delta_z) + 1;
+                    else
+                        iz1 = int16(obj.nz);
+                    end
+                    phi_z(iz0:iz1) = a_z(iz0:iz1)/this_ly.mu_a;
+                    layer = layer + 1;
+                    zt = zt - thickness;
                 end
-                phi_z(iz0:iz1) = a_z(iz0:iz1)/this_ly.mu_a;
-                layer = layer + 1;
-                zt = zt - thickness;
             end
         end
         function r_coords = get_rcoords(obj)
-            i = 1:obj.nr;
-            r_coords = ((i+0.5)+1/(12*(i+0.5))) * obj.delta_z;
+            i = 0:obj.nr-1;
+            r_coords = ((i+0.5)+1/(12*(i+0.5))) * obj.delta_r;
         end
         function z_coords = get_zcoords(obj)
-            i = 1:obj.nz;
+            i = 0:obj.nz-1;
             z_coords = (i+0.5) * obj.delta_z;
         end
     end

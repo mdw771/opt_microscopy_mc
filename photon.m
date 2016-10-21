@@ -44,7 +44,7 @@ classdef photon
         end
         function obj = get_s(obj)
             % get random s
-            xi = time_rand();
+            xi = rand();
             obj.s = -log(xi);
         end
         function [obj, delta_w] = absorb(obj, ly_ls)
@@ -56,7 +56,7 @@ classdef photon
         end
         function obj = scatter(obj, ly_ls)
             % update direction cosines upon scattering
-            xi = time_rand();
+            xi = rand();
             this_ly = ly_ls(obj.layer);
             g = this_ly.g;
             if g ~= 0
@@ -66,7 +66,7 @@ classdef photon
                 cosine = 2*xi - 1;
             end
             theta = acos(cosine);
-            xi = time_rand();
+            xi = rand();
             phi = 2 * pi * xi;
             mux = obj.ux;
             muy = obj.uy;
@@ -130,7 +130,7 @@ classdef photon
                 r = (sin(a_i-a_t)/sin(a_i+a_t))^2 ;
                 r = 0.5 * (r+(tan(a_i-a_t)/tan(a_i+a_t))^2);
             end
-            xi = time_rand();
+            xi = rand();
             if xi <= r
                 % internally reflected
                 obj.uz = -obj.uz;
@@ -151,7 +151,7 @@ classdef photon
             end
         end
         function obj = terminate(obj, m)
-            xi = time_rand();
+            xi = rand();
             if xi <= 1/m
                 obj.w = m*obj.w;
             else
